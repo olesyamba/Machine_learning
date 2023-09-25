@@ -8,9 +8,9 @@ spacy.cli.download("en_core_web_sm")
 nlp = spacy.load('en_core_web_sm')
 # Define a function to preprocess text data
 
-def preprocess_text(textt):
+def preprocess_text(text):
     # Tokenize the text
-    doc = nlp(textt)
+    doc = nlp(text)
 
     # Remove stop words and punctuation
     tokens = [token.text.lower() for token in doc if not token.is_stop and not token.is_punct]

@@ -1,2 +1,2 @@
-# Preprocessing text data using NLP methods <img src="edit1.0.png" width="50" height="50">
+# Preprocessing text data using NLP methods <img src=https://github.com/olesyamba/ICvsML/assets/118986574/d30608ef-c708-46d3-96b4-97be0ce6bdc9 alt="drawing" width="50" />
 Base programm of preprocessing consists of tokenization, removing stop words and punctuation, lemmatization. Def was build with the help of spaCy -  a library for advanced Natural Language Processing in Python. Use the [link](https://spacy.io/usage/) to read more about spaCy usage. Alternative version was build with nltk package. 

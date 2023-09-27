@@ -35,7 +35,7 @@ def nltk_preprocess(text):
     return text
 
 
-example = ['This is an example sentence. It contains stop words and punctuation!', 'If you read this - Give me a star!']
+example = ['I'm really hungry. Give me the biggest hot-dog!', 'If you read this - Give me a star!']
 preprocessed_example = [nltk_preprocess(sentence) for sentence in example]
 print(preprocessed_example)
 

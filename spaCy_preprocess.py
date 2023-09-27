@@ -4,8 +4,10 @@ tokens.The resulting preprocessed text is returned as a string."""
 import spacy
 
 # Load the English language model
-spacy.cli.download("en_core_web_sm")
+# spacy.cli.download("en_core_web_sm")
 nlp = spacy.load('en_core_web_sm')
+
+
 # Define a function to preprocess text data
 
 def preprocess_text(text):

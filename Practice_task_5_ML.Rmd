@@ -1,0 +1,533 @@
+---
+title: "Practice_task_5_ML"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(stringi)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(glmnet)
+library(naniar)
+library(simputation)
+```
+
+```{python}
+#!pip install pandas 
+#!pip install matplotlib 
+#!pip install seaborn 
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt
+import seaborn as sns
+```
+
+```{r}
+data_r = read.csv('secondary_data.csv', sep = ";") 
+data_r = data_r[, c(1,2,6,10)]
+```
+
+
+```{r}
+data_r$class = str_replace(data_r$class, "p", "0")
+data_r$class = str_replace(data_r$class, "e", "1")
+data_r$does.bruise.or.bleed = str_replace(data_r$does.bruise.or.bleed, "f", "0")
+data_r$does.bruise.or.bleed = str_replace(data_r$does.bruise.or.bleed, "t", "1")
+```
+
+```{r}
+data_r$class = as.numeric(data_r$class)
+data_r$does.bruise.or.bleed  = as.numeric(data_r$does.bruise.or.bleed )
+```
+
+```{r}
+data_r %>%
+  is.na() %>% 
+  colSums()
+```
+
+```{r}
+summary(data_r)
+```
+
+
+```{r}
+hist(data_r$cap.diameter)
+hist(data_r$stem.height)
+boxplot(data_r$cap.diameter, col = "mediumturquoise", 
+        ylab = 'Cap diameter',  main="Boxplot of cap diameter")
+boxplot(data_r$stem.height, col = "mediumturquoise",
+        ylab = 'Stem Height',  main="Boxplot of stem height")
+```
+
+```{r}
+dn = quantile(data_r$cap.diameter, 0.25) - (quantile(data_r$cap.diameter, 0.75)- quantile(data_r$cap.diameter, 0.25)) * 1.5
+up = quantile(data_r$cap.diameter, 0.75) + (quantile(data_r$cap.diameter, 0.75)- quantile(data_r$cap.diameter, 0.25)) * 1.5
+data_r = filter(data_r, cap.diameter >= dn)
+data_r = filter(data_r, cap.diameter <= up)
+```
+
+```{r}
+dn1 = quantile(data_r$stem.height, 0.25) - (quantile(data_r$stem.height, 0.75)- quantile(data_r$stem.height, 0.25)) * 1.5
+up1 = quantile(data_r$stem.height, 0.75) + (quantile(data_r$stem.height, 0.75)- quantile(data_r$stem.height, 0.25)) * 1.5
+data_r = filter(data_r, stem.height >= dn1)
+data_r = filter(data_r, stem.height <= up1)
+```
+
+```{r}
+hist(data_r$cap.diameter, col = "mediumturquoise")
+hist(data_r$stem.height, col = "mediumturquoise")
+boxplot(data_r$cap.diameter, col = "mediumturquoise", 
+        ylab = 'Cap diameter',  main="Boxplot of cap diameter")
+boxplot(data_r$stem.height, col = "mediumturquoise",
+        ylab = 'Stem Height',  main="Boxplot of stem height")
+```
+
+```{r}
+write.csv(data_r,"/Users/olesyamba/Downloads/ML/HW_5/data.csv", row.names = FALSE)
+```
+
+```{python}
+data_python = pd.read_csv("/Users/olesyamba/Downloads/ML/HW_5/data.csv")
+data_python1=data_python
+```
+
+```{python}
+fig, (ax1, ax2) = plt.subplots(1,2,figsize=(15,15))
+
+sns.kdeplot(
+   data=data_python, x=data_python['stem.height'], hue = 'class',
+   fill=True, common_norm=False, palette="crest",
+   alpha=.5, linewidth=0, ax=ax1
+)
+sns.kdeplot(
+   data=data_python, x=data_python['stem.height'],
+   fill=False, common_norm=False, color="royalblue",
+   alpha=1, linewidth=1, ax=ax1
+)
+ax1.set_xlabel("Stem height") 
+ax1.set_title(label = "Density of stem height")
+
+sns.kdeplot(
+   data=data_python, x=data_python['cap.diameter'], hue = 'class',
+   fill=True, common_norm=False, palette="crest",
+   alpha=.5, linewidth=0, ax=ax2
+)
+sns.kdeplot(
+   data=data_python, x=data_python['cap.diameter'],
+   fill=False, common_norm=False, color="royalblue",
+   alpha=1, linewidth=1, ax=ax2
+)
+ax2.set_xlabel("Cap diameter")  
+ax2.set_title(label = "Density of cap diameter")
+
+plt.subplots_adjust(wspace=0.3, hspace=0.3)
+plt.show()
+```
+
+```{python}
+fig1, (ax3, ax4) = plt.subplots(1,2,figsize=(30,50))
+
+sns.kdeplot(
+   data=data_python, x=data_python['stem.height'], hue = 'does.bruise.or.bleed',
+   fill=True, common_norm=False, palette="crest",
+   alpha=.5, linewidth=0, ax=ax3
+)
+sns.kdeplot(
+   data=data_python, x=data_python['stem.height'],
+   fill=False, common_norm=False, color="royalblue",
+   alpha=1, linewidth=1, ax=ax3
+)
+ax3.set_xlabel("stem.height")  
+ax3.set_title(label = "Density of stem height")
+
+sns.kdeplot(
+   data=data_python, x=data_python['cap.diameter'], hue = 'does.bruise.or.bleed',
+   fill=True, common_norm=False, palette="crest",
+   alpha=.5, linewidth=0, ax=ax4
+)
+sns.kdeplot(
+   data=data_python, x=data_python['cap.diameter'],
+   fill=False, common_norm=False, color="royalblue",
+   alpha=1, linewidth=1, ax=ax4
+)
+ax4.set_xlabel("cap.diameter")  
+ax4.set_title(label = "Density of cap diameter")
+sns.move_legend(ax3, "upper right")
+plt.subplots_adjust(wspace=0.3, hspace=0.3)
+plt.show()
+```
+
+```{r}
+ks.test(data_r$cap.diameter, 'pnorm') 
+```
+
+```{r}
+ks.test(data_r$stem.height, 'pnorm') 
+```
+
+```{r}
+library(RColorBrewer)
+library(ggpubr)
+ggqqplot(data_r$cap.diameter, palette=RColorBrewer::brewer.pal(7, "YlGnBu"), col = "mediumturquoise", title = "QQPlot of cap diameter")
+```
+
+```{r}
+library(ggpubr)
+ggqqplot(data_r$stem.height, title = "QQPlot of stem height", col = "mediumturquoise")
+```
+
+```{python}
+sns.jointplot(data = data_python, x=data_python['class'], y=data_python['cap.diameter'], kind="kde", fill = True, color="mediumturquoise")
+plt.suptitle("Simultaneous distribution of class and cap diameter")
+plt.show()
+
+sns.jointplot(data = data_python, x=data_python['class'], y=data_python['does.bruise.or.bleed'], kind="kde", fill = True, color="olivedrab")
+plt.suptitle("Simultaneous distribution of class  and does bruise or bleed")
+plt.show()
+
+sns.jointplot(data = data_python, x=data_python['class'], y=data_python['stem.height'], kind="kde", fill = True, color="skyblue")
+plt.suptitle("Simultaneous distribution of class and stem height")
+plt.show()
+
+sns.jointplot(data = data_python, x=data_python['cap.diameter'], y=data_python['does.bruise.or.bleed'], kind="kde", fill = True, color="magenta")
+plt.suptitle("Simultaneous distribution of cap diameter and does bruise or bleed")
+plt.show()
+
+sns.jointplot(data = data_python, x=data_python['cap.diameter'], y=data_python['stem.height'], kind="kde", fill = True, color="mediumslateblue")
+plt.suptitle("Simultaneous distribution of cap diameter and stem height")
+plt.show()
+
+sns.jointplot(data = data_python, x=data_python['does.bruise.or.bleed'], y=data_python['stem.height'], kind="kde", fill = True, color="gold")
+plt.suptitle("Simultaneous distribution of does bruise or bleed and stem height")
+plt.show()
+```
+
+
+```{python}
+class1 = data_python[data_python['class']==1]
+class0 = data_python[data_python['class']==0]
+
+doesbruise1 = data_python[data_python['does.bruise.or.bleed']==1]
+doesbruise0 = data_python[data_python['does.bruise.or.bleed']==0]
+```
+
+```{python}
+#!pip install scipy 
+from scipy.stats import kstest
+
+stat, p_value = kstest(class1['cap.diameter'], class0['cap.diameter'])
+print(f" Kolmogorov-Smirnov Test for different values of class on variable cap.diameter: statistic={stat:.4f}, p-value={p_value:.4f} \n \n")
+
+stat, p_value = kstest(class1['stem.height'], class0['stem.height'])
+print(f" Kolmogorov-Smirnov Test for different values of class on variable stem.height: statistic={stat:.4f}, p-value={p_value:.4f} \n \n")
+
+stat, p_value = kstest(doesbruise1['cap.diameter'], doesbruise0['cap.diameter'])
+print(f" Kolmogorov-Smirnov Test for different values of does.bruise.or.bleed on variable cap.diameter: statistic={stat:.4f}, p-value={p_value:.4f} \n \n")
+
+stat, p_value = kstest(doesbruise1['stem.height'], doesbruise0['stem.height'])
+print(f" Kolmogorov-Smirnov Test for different values of does.bruise.or.bleed on variable stem.height: statistic={stat:.4f}, p-value={p_value:.4f} \n \n")
+```
+
+```{r}
+data_r$class = as.integer(data_r$class)
+data_r$cap.diameter = as.integer(data_r$cap.diameter)
+data_r$does.bruise.or.bleed = as.integer(data_r$does.bruise.or.bleed)
+data_r$stem.height = as.integer(data_r$stem.height)
+pca <- prcomp(data_r, center = TRUE, scale = TRUE)
+
+summary(pca)
+```
+
+
+```{r}
+pca$rotation
+```
+
+```{r}
+#install.packages("factoextra")
+library(factoextra)
+
+fviz_eig(pca, barfill = "mediumturquoise", linecolor = "darkcyan", ggtheme = theme_gray(), main = "Principal components explained variance")
+```
+
+
+```{r}
+fviz_pca_ind(pca,
+             col.ind = "cos2", # Color by the quality of representation
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE # Avoid text overlapping
+             )
+```
+
+```{r}
+fviz_pca_var(pca,
+             col.var = "contrib", # Color by contributions to the PC
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoid text overlapping
+             )
+```
+
+
+```{r}
+fviz_pca_biplot(pca, repel = TRUE,
+                col.var = "#00AFBB", # Variables color
+                col.ind = "#FC4E07"  # Individuals color
+                )
+```
+
+```{r}
+groups <- as.factor(data_r$class)
+fviz_pca_ind(pca,
+             col.ind = groups, # color by groups
+             palette = c("#00AFBB",  "#FC4E07"),
+             addEllipses = TRUE, # Concentration ellipses
+             ellipse.type = "confidence",
+             legend.title = "Groups",
+             repel = TRUE
+             )
+```
+```{r}
+groups <- as.factor(data_r$does.bruise.or.bleed)
+fviz_pca_ind(pca,
+             col.ind = groups, # color by groups
+             palette = c("#00AFBB",  "#FC4E07"),
+             addEllipses = TRUE, # Concentration ellipses
+             ellipse.type = "confidence",
+             legend.title = "Groups",
+             repel = TRUE
+             )
+```
+
+```{r}
+pca.coord <- pca$x
+pca.coord = pca.coord[, 1:2]
+```
+
+```{r}
+class_pca <- as.factor(data_r$class)
+library(car)
+scatterplot(pca.coord[, 1],
+            pca.coord[, 2],
+            group = class_pca,
+            regLine=TRUE,
+            legend=TRUE,
+            ellipse=TRUE,
+            grid=TRUE,
+            smooth=list(smoother=loessLine, style="line", alpha=0.5, border=TRUE, vertical=TRUE, col.var = "grey"),
+            boxplots = TRUE,
+            ylab='PC2',
+            xlab='PC1',
+            main = "Class differentianting in PC's",
+            col=c("#00AFBB",  "#FC4E07"))
+```
+
+```{r}
+bruised_pca <- as.factor(data_r$does.bruise.or.bleed)
+scatterplot(pca.coord[, 1],
+            pca.coord[, 2],
+            group = bruised_pca,
+            regLine=TRUE,
+            legend=TRUE,
+            ellipse=TRUE,
+            grid=TRUE,
+            smooth=list(smoother=loessLine, style="line", alpha=0.5, border=TRUE, vertical=TRUE, col.var = "grey"),
+            boxplots = TRUE,
+            ylab='PC2',
+            xlab='PC1',
+            main = "Bruised differentianting in PC's",
+            col=c("#00AFBB",  "#FC4E07"))
+```
+```{r}
+components <- data.frame(pca.coord)
+#components['index'] = seq(1, length(components), 1)
+```
+
+```{r}
+colnames(components) <- c("PC1", "PC2")
+#library(ggplot2)
+#ggplot(components, aes(x= PC1, y = PC2))+geom_point()+theme_minimal()
+```
+
+```{r}
+library(stats)
+#Метод сингл 
+dist_obs = dist(components, method = "euclidean")
+```
+
+```{r}
+hc_obs = hclust(dist_obs, method = "single") 
+```
+
+```{r}
+H <- data.frame (first_column  = c(0, 1),
+                  second_column = c(0.37, 0.37))
+#Раскрасим кластеры на дендрограмме
+library(dendextend)
+dend_stock <- as.dendrogram(hc_obs)
+dend_stock <- color_branches(dend_stock, h = 0.5)
+plot(dend_stock, main = "Cluster dendrogram | Single method", xlab = "Euclidian distances", ylab = "Height")
+lines(H, cex = .5, col = "dark red")
+#Не раскрашивает из-за большой размерности данных:(
+```
+
+
+```{r}
+library(dplyr) 
+clust_hc_obs = cutree(hc_obs, h = 0.37) 
+data = mutate(components, clusters = clust_hc_obs)
+```
+
+
+```{r}
+data %>%
+count(clusters) 
+#4 кластера
+```
+
+
+```{r}
+ggplot(data, aes(x=PC1, y = PC2, color = factor(clusters))) +geom_point()+theme_grey() + ggtitle("Clusters in PC's") 
+```
+
+
+```{r}
+#Выведем средние значения по всем кластерам
+data %>% 
+  group_by(clusters) %>% 
+  summarise_all(list(mean))
+```
+
+```{r }
+#Применяем метод k-means и рисуем график локтя
+components1 <- components[,-1]
+library(purrr)
+
+tot_withinss <- map_dbl(1:10, function(k){
+model <- kmeans(x = components1, centers = k)
+model$tot.withinss
+})
+```
+
+```{r}
+elbow_df <- data.frame(
+k = 1:10,
+tot_withinss = tot_withinss
+)
+
+```
+
+```{r}
+ggplot(elbow_df, aes(x = k, y = tot_withinss)) +
+geom_line(colour = "darkcyan") + 
+scale_x_continuous(breaks = 1:10) +
+  ggtitle("График локтя") + 
+  xlab("Количество кластеров")+
+  ylab("Совокупное расстояние между наблюдениями в кластере")
+
+# Согласно графику локтя после добавления 4-го кластера идет не радикальное снижение расстояний между наблюдениями в кластере, поэтому необходимо выделить 4 кластера
+```
+
+```{r}
+set.seed(42)
+components_kmeans <- kmeans(components1, centers = 4)
+```
+
+```{r}
+data1 = mutate(components, clusters = components_kmeans$cluster)
+ggplot(data1, aes(x=PC1, y = PC2, color = factor(clusters))) +geom_point()+theme_grey() + ggtitle("Clusters in PC's | Kmeans method")
+```
+
+```{r}
+#Выведем средние значения по всем кластерам
+data1 %>% 
+  group_by(clusters) %>% 
+  summarise_all(list(mean))
+```
+```{r}
+#install.packages('boot',dep=TRUE)
+library(boot)
+```
+
+```{r}
+components2 <- data.frame(components[,-1])
+components3 <- data.frame(components[,-1])
+
+function_1 <- function(data, i){
+  d2 <- data[i,] 
+  set.seed(42)
+  components_kmeans <- kmeans(d2, centers = 4)
+  components2 = mutate(components2, cluster = components_kmeans$cluster)
+  return(components_kmeans$cluster)
+}
+```
+
+```{r}
+set.seed(1)
+bootstrap_clusters <- boot(components3,function_1,R=10)
+```
+
+```{r}
+summary(bootstrap_clusters)
+```
+
+```{r}
+boot_samples_clusters = data.frame(bootstrap_clusters$t)
+boot_samples_clusters = t(boot_samples_clusters)
+```
+
+```{r}
+boot_samples_clusters = data.frame(boot_samples_clusters) 
+colnames(boot_samples_clusters) = c("Sample1", "Sample2", "Sample3", "Sample4", "Sample5", "Sample6", "Sample7", "Sample8", "Sample9", "Sample10")
+```
+
+```{r}
+boot_samples_clusters %>%
+    group_by(Sample1) %>%
+    count()
+
+boot_samples_clusters %>%
+    group_by(Sample2) %>%
+    count()
+
+boot_samples_clusters %>%
+    group_by(Sample3) %>%
+    count()
+
+boot_samples_clusters %>%
+    group_by(Sample4) %>%
+    count()
+
+boot_samples_clusters %>%
+    group_by(Sample5) %>%
+    count()
+
+boot_samples_clusters %>%
+    group_by(Sample6) %>%
+    count()
+
+boot_samples_clusters %>%
+    group_by(Sample7) %>%
+    count()
+
+boot_samples_clusters %>%
+    group_by(Sample8) %>%
+    count()
+
+boot_samples_clusters %>%
+    group_by(Sample9) %>%
+    count()
+
+boot_samples_clusters %>%
+    group_by(Sample10) %>%
+    count()
+#4 кластера
+```
+
+```{r}
+data_boot = mutate(components, clusters = bootstrap_clusters$t0)
+ggplot(data_boot, aes(x=PC1, y = PC2, color = factor(clusters))) +geom_point()+theme_grey() + ggtitle("Original clusters in PC's | bootstrap version")
+```
+
